@@ -33,11 +33,11 @@ int main(){
 
 	cout << "Check: " << endl;
 	cout << f2(xn, yn) << " " << f3(xn, yn) << endl;
-	*/
+	
 	
 	cout << "===============" << endl << endl;
 	cout << "Solution of task2:" << endl;
-
+	*/
 	vector <double> v;
 	v.push_back(0.5);
 	v.push_back(0.5);
@@ -50,8 +50,7 @@ int main(){
 	v.push_back(1.5);
 	v.push_back(-1.5);
 
-	cout << "Result" << endl;
-	print( MethodNuton(v, true, 7));
+	print( MethodNuton(v, true, 5 ));
 
 	system("pause");
 	return 0;
@@ -102,10 +101,10 @@ void MethodNuton(double a0, double a1, double c0, double c1, double& xn, double&
 
 	F[0] = f2 ( a1, c1);
 	F[1] = f3 ( a1, c1);
-	cout << "Matrix F" << F[0] << " " << F[1] << endl;
+	//cout << "Matrix F" << F[0] << " " << F[1] << endl;
 
 	vector <vector <double> > J;
-	vector <vector <double> > P;
+	vector <vector <double> > P;                                              
 	vector <vector <double> > L;
 	vector <vector <double> > U;
 	J.resize(2);
@@ -126,8 +125,8 @@ void MethodNuton(double a0, double a1, double c0, double c1, double& xn, double&
 	J[1][1] = sin(c1);
 	checkEps(J);
 
-	cout << "Matrix Jacobi:" << endl;
-	print(J);
+	//cout << "Matrix Jacobi:" << endl;
+	//print(J);
 	cout << endl;
 
 	PLU(J, P, L, U);
@@ -138,8 +137,8 @@ void MethodNuton(double a0, double a1, double c0, double c1, double& xn, double&
 		InvJ[i].resize(2);
 
 	copy( InvJ, getInverseMatrix(P, L, U));
-	cout << "Inverse Matrix:" << endl;
-	print(InvJ);
+	//cout << "Inverse Matrix:" << endl;
+	//print(InvJ);
 
 	vector<double> M;
 	M.resize(F.size());
@@ -150,8 +149,8 @@ void MethodNuton(double a0, double a1, double c0, double c1, double& xn, double&
 	if (fabs(xn) < EPS) xn = 0.0;
 	if (fabs(yn) < EPS) yn = 0.0;
 
-	cout << "============ " << endl;
-	cout << xn << " " << yn << endl;
+	//cout << "============ " << endl;
+	//cout << xn << " " << yn << endl;
 
 	if (fabs(a1 - xn) > ACCURACY && fabs(c1 - yn) > ACCURACY){
 		MethodNuton(a0, xn, c0, yn, xn, yn);
@@ -323,17 +322,16 @@ vector <double> MethodNuton( const vector <double>& v, const bool is_modified, c
 
 	vector <double> d; //d =x^(k+1) - x^(k) 
 	d.resize(10);
-
+	bool first = true;
+	unsigned int k = 0;
 	do{
-		cout << iter << endl;
-		if (is_modified && iter == index){
-			break;
-		}
 		copy(F, calculateMatrix(res));
 
-		copy(J, calculateMatrixJacobi(res));
-
-		PLU(J, P, L, U);
+		if ((!is_modified) || (is_modified && k < index)){			//k % index == 0 )){
+			first = false;
+			copy(J, calculateMatrixJacobi(res));
+			PLU(J, P, L, U);
+		}
 
 		copy(d, solveLinerSystem(P, L, U, F));
 
@@ -341,9 +339,12 @@ vector <double> MethodNuton( const vector <double>& v, const bool is_modified, c
 		for (int i = 0; i < v.size(); ++i){
 			res[i] += d[i];
 		}
+		++k;
 		++iter;
 	} while ( norm(d) > EPS );
-	
+	cout << endl;
+	cout << k;
+	cout << endl;
 	return res;
 }
 

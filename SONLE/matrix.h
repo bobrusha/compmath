@@ -7,7 +7,7 @@
 
 using namespace std;
 
-const double EPS = 10e-9;
+const double EPS = 10e-12;
 void print(const vector <double> &);
 void print(const vector < vector <double> >&);
 void copy(vector <double> &, const vector <double> &);
