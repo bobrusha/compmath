@@ -1,10 +1,12 @@
 #include <iostream>
 #include "matrix.h"
+
+#define pi (3.141592653589793)
 //result = 3.57886
 
 double w_f (double, vector < double > );
 double w_d(double, vector < double >);
-double MethodNewton (const double , const vector <double>);
+void MethodNewton (const double , const vector <double>, vector <double>& );
 
 double Gauss(const double, const double);
 double NewtonCotes(const double , const double );
@@ -14,7 +16,8 @@ double calculateIntegralNC(const double, const double, const double);
 double AitkenG(const double, const double);
 double AitkenNC(const double, const double);
 
-void findTwoRoots(const vector <double>, vector <double> &);
+void findRootsCardano(const vector<double>, vector <double> &);
+
 int main(){
 	//cout<<Gauss(0.1, 2.3);
 	cout << calculateIntegralG(0.1, 2.3, 3);
@@ -39,123 +42,92 @@ double p (double x, double a, double b){
 	}
 	return res;
 }
-vector <double> calculateMomentsN(double a, double b){
+vector <double> calculateMomentsG(double a, double b){
 	vector <double> moments;
 	moments.resize(6);
-	moments[0] = 1.25 * pow(b - 0.1, 0.8) - 1.25 * pow(a - 0.1, 0.8);
-	moments[1] = 0.0110062 * (1 + 8 * b) *pow(-1 + 10 * b, 0.8) - 0.0110062 * (1 + 8 * a) * pow(-1 + 10 * a, 0.8);
-	moments[2] = pow(-0.1 + b, 0.8) * (0.00496032 + (0.0396825 + 0.357143 * b) * b) -
-				pow(-0.1 + a, 0.8) * (0.00496032 + (0.0396825 + 0.357143 * a) * a);
-	moments[3] = 0.0000620651 * pow(-1 + 10 * b, 0.8) *(1 + 8 * b + 72 * pow(b, 2) + 672 * pow(b, 3)) - 
-		(0.0000620651 * pow(-1 + 10 * a, 0.8) *(1 + 8 * a + 72 * pow(a, 2) + 672 * pow(a, 3)));
-	moments[4] = 0.00012413 * pow(-1 + 10 * b, 0.8) * (0.0416667 + b/3 + 3*pow(b, 2) + 28*pow( b , 3) + 266 *pow(b, 4)) -
-		(0.00012413 * pow(-1 + 10 * a, 0.8) * (0.0416667 + a / 3 + 3 * pow(a, 2) + 28 * pow(a, 3) + 266 * pow(a, 4)));
-	moments[5] = 0.0000299624 * pow(-1 + 10 * b, 0.8) * (0.014881 + 0.119048*b + 1.07143 * pow(b, 2) +
-		10 * pow(b, 3) + 95 * pow(b, 4) + 912 * pow(b, 5)) - (0.0000299624 * pow(-1 + 10 * a, 0.8) * (0.014881 + 0.119048*a + 1.07143 * pow(a, 2) +
+	moments[0] = 1.250 *(pow(b - 0.10, 0.80) - pow(a - 0.10, 0.80));
+	moments[1] = 0.0110062 * ((1 + 8 * b) *pow(-1 + 10 * b, 0.8) -  (1 + 8 * a) * pow(-1 + 10 * a, 0.8));
+	moments[2] = pow(-0.1 + b, 0.8) * ((0.00496032 + (0.0396825 + 0.357143 * b) * b) -
+				 (0.00496032 + (0.0396825 + 0.357143 * a) * a));
+	moments[3] = 0.0000620651 * pow(-1 + 10 * b, 0.8) *((1 + 8 * b + 72 * pow(b, 2) + 672 * pow(b, 3)) - 
+		(1 + 8 * a + 72 * pow(a, 2) + 672 * pow(a, 3)));
+	moments[4] = 0.00012413 * pow(-1 + 10 * b, 0.8) * ((0.0416667 + b/3 + 3*pow(b, 2) + 28*pow( b , 3) + 266 *pow(b, 4)) -
+		 (0.0416667 + a / 3 + 3 * pow(a, 2) + 28 * pow(a, 3) + 266 * pow(a, 4)));
+	moments[5] = 0.0000299624 * pow( - 1.0 + 10.0 * b, 0.80) * ((0.014881 + 0.119048*b + 1.07143 * pow(b, 2) +
+		10 * pow(b, 3) + 95 * pow(b, 4) + 912 * pow(b, 5)) - (0.014881 + 0.119048*a + 1.07143 * pow(a, 2) +
 		10 * pow(a, 3) + 95 * pow(a, 4) + 912 * pow(a, 5)));
 
 	return moments;
 }
 double Gauss (const double l, const double r){
-	//1. Считаем моменты весовой функции
+	//моменты
+	vector <double> M;
+	M.resize(6);
+	copy(M, calculateMomentsG(l, r));
 
-	vector <double> moments;
-	moments.resize(6);
-	copy(moments, calculateMomentsN(l, r));
-	checkEps(moments);
-	cout << "Moments: " << endl;
-	print(moments);
+	//решаем слау
+	vector <double> mns;
+	for (int i = 0; i < 3; ++i){
+		mns.push_back(-M[i + 3]);
+	}
 
-	//2. Решаем СЛАУ
-	vector < vector < double> > M;
-	M.resize(3);
-
+	vector <vector <double> > mis;
+	mis.resize(3);
 	for (int i = 0; i < 3; ++i){
 		for (int j = 0; j < 3; ++j){
-			M[i].push_back(moments[i + j]);
+			mis[i].push_back(M[i+j]);
 		}
 	}
-
-	vector <double> mju;
-	for (int i = 0; i < 3; ++i){
-		mju.push_back(-moments[3+i]);
-	}
-	
-	vector < vector<double> >P;
-	vector < vector<double> >L;
-	vector < vector<double> >U;
-
+	vector <vector <double>> P, L, U;
 	P.resize(3);
 	L.resize(3);
 	U.resize(3);
-	
+
 	for (int i = 0; i < 3; ++i){
 		P[i].resize(3);
 		L[i].resize(3);
 		U[i].resize(3);
 	}
 
-	PLU(M, P, L, U);
+	PLU(mis, P, L, U);
 
 	vector <double> a;
 	a.resize(3);
-	copy( a, solveLinerSystem(P, L, U, mju));
-	cout << "Print a" << endl;
-	print(a);
-	//3. Находим корни узлового многочлена
-	vector <double> x;
-	
-	x.push_back(MethodNewton((l+r)/2, a));
-	findTwoRoots(a, x);
-	cout << "x" << endl;
-	print(x);
+	copy(a, solveLinerSystem(P, L, U, mns));
 
-	// 4. Находим Ai
-	vector <vector <double> > X;
+	vector < double > x;
+	MethodNewton( (l+r)/2, a, x);
+	//findRootsCardano(a, x);
+
+	vector <double> A;
+	A.resize(3);
+
+	vector <vector <double>> X;
 	X.resize(3);
 	for (int i = 0; i < 3; ++i){
 		for (int j = 0; j < 3; ++j){
-			X[i].push_back( pow (x[j], i));
+			X[i].push_back(pow(x[j], i));
 		}
 	}
 
-	//cout << "Matrix X:" << endl;
-	//print(X);
-
-	PLU( X, P, L, U );
-	
-	vector < double > A;
-	A.resize(3);
-	
+	PLU(X, P, L, U);
+	vector <double> ms;
 	for (int i = 0; i < 3; ++i){
-		mju[i] = moments[i];
+		ms.push_back(M[i]);
 	}
-	//cout << "mju " << endl;
-	//print(mju);
-	copy(A, solveLinerSystem(P, L, U, mju));
-	//cout << "Matrix A: " << endl;
-	//print(A);
+	copy(A, solveLinerSystem(P,L, U, ms));
 
-	double res = A[0] * x[0] + A[1] * x[1] + A[2] * x[2];
-	//cout << res << endl;
+	double res = A[0] * f(x[0]) + A[1] * f(x[1]) + A[2] * f(x[2]);
 	if (fabs(res) < EPS)
 		res = 0.0;
 	return res;
 }
 
-void findTwoRoots(const vector <double> a, vector <double>& x){
-	double x1, x2;
-	double D = pow(a[0], 2) - 2 * x[0] * a[0] -3* pow(x[0], 2) - 4 * a[1];
-	x1 = (-(a[0] + x[0]) - sqrt(D)) / 2.0;
-	x2 = (-(a[0] + x[0]) + sqrt(D)) / 2.0;
-	x.push_back(x1);
-	x.push_back(x2);
-	return;
-}
 double calculateIntegralWithStepG(const double l, const double r, const int h){
 	double res = 0;
-	for (int i = 0; i < h; ++i)
+	for (int i = 0; i < h; ++i){
 		res += Gauss(l + i * ((r - l) / h), l + (i + 1)*((r - l) / h));
+	}
 	return res;
 }
 double calculateIntegralG(const double l, const double r, const double n)
@@ -163,16 +135,16 @@ double calculateIntegralG(const double l, const double r, const double n)
 	const double L = 2.0;
 	double sh1 = 0.0;
 	double sh2 = 0.0;
-	double R = 0.0;
+	double R = 23.0;
 	unsigned int i = 1;
 	do{
 		sh1 = calculateIntegralWithStepG(l, r, i);
 		sh2 = calculateIntegralWithStepG(l, r, 2 * i);
 		R = (sh2 - sh1) / (pow(L, n) - 1.0);
-		//cout << sh2 << " - " << sh1 << endl;
+		cout << sh2 << " - " << sh1 << endl;
 		++i;
 	} while (fabs(R) > EPS);
-	cout << "Numbers oi iterations: " << i - 1 << endl;
+	cout << "Numbers of iterations: " << i - 1 << endl;
 	return sh2;
 }
 vector<double> calculateMomentsForCotes(const double z0, const double z1){
@@ -228,18 +200,26 @@ double NewtonCotes(const double a, const double b){
 }
 
 //находит корни на отрезке от l до r
-double MethodNewton(const double x, const vector <double> a){
-	double res = x;
+void MethodNewton(const double x0, const vector <double> a, vector <double>& x){
+	double prev = x0;
+	double x1 = x0;
+	do {
+		x1 -= w_f(prev, a) / w_d(prev, a);
+		prev = x1;
 
-	while ( fabs(w_f(res, a)) > EPS){
-		res -= w_f(res, a) / w_d(res, a);
-	}
+	} while (fabs(w_f(x1, a) - w_f(prev, a)) > EPS);
 
-	/*
-	if (fabs(res) < EPS)
-		res = 0.0;
-	*/
-	return res;
+	x.push_back(x1);
+
+	double x2, x3;
+	double p = a[2] + x1;
+	double q = a[1] + x1*(a[2] + x0);
+	double D = pow(p,2) - 4*q;
+	x2 = ( -p - sqrt(D)) / 2.0;
+	x3 = ( -p + sqrt(D)) / 2.0;
+	x.push_back(x2);
+	x.push_back(x3);
+	return;
 }
 double calculateIntegralWithStepNC(const double l, const double r, const double h){
 	double res = 0;
@@ -264,6 +244,15 @@ double calculateIntegralNC(const double l, const double r, const double n){
 	} while (fabs(R) > EPS);
 	cout << "Numbers oi iterations: " << i << endl;
 	return sh2;
+}
+void findRootsCardano(const vector <double> a, vector<double> & x){
+	double Q = (pow(a[0], 2) - 3 * a[1]) / 9;
+	double R = (2 * pow(a[0], 3) - 9 * a[0] * a[1] + 27 * a[2]) / 54;
+	double t = acos(R / sqrt(pow(Q, 3))) / 3;
+	x.push_back(-2 * sqrt(Q)*cos(t) - a[0] / 3),
+	x.push_back(-2 * sqrt(Q)*cos(t + (2 * pi / 3)) - a[0] / 3);
+	x.push_back(-2 * sqrt(Q)*cos(t - (2 * pi / 3)) - a[0] / 3);
+	return;
 }
 
 double AitkenNC(const double l, const double r){
@@ -290,9 +279,8 @@ double AitkenG(const double l, const double r){
 	return m;
 }
 double w_f ( const double x, const vector <double> a){
-	double res = pow(x, 3) + a[0] * pow(x, 2) + a[1] * x + a[2];
-	if (fabs(res) < EPS)
-		res = 0.0;
+	double res = pow(x, 3) + a[2] * pow(x, 2) + a[1] * x + a[0];
+
 	return res;
 }
 
