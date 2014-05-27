@@ -14,11 +14,19 @@ double f2(vector <double>);
 
 vector <double> solve(double, double, const double, const double, const int);
 vector <double> solveWithOpponent(double, double, double, double, const int);
-vector <double> getSolutionRunge(double, double, double, double, const int);
+vector <double> getSolutionRungeBase(double, double, double, double, const int);
+vector <double> getSolutionRungeOpponent(double, double, double, double, const int);
+vector <double> getSolutionAutoStepBase(double, double, double, double, const int);
+vector <double> getSolutionAutoStepOpponent(double, double, double, double, const int);
+
 void print(const vector <double>);
 void copy(vector <double>&, const vector <double>);
 int main(){
-	print(getSolutionRunge(0, M_PI, B*M_PI, A*M_PI, 2));
+	cout << "Base with Runge rule:" << endl;
+	print(getSolutionRungeBase(0, M_PI, B*M_PI, A*M_PI, 2));
+	cout << "Opponent with Runge rule:" << endl;
+	print(getSolutionRungeOpponent(0, M_PI, B*M_PI, A*M_PI, 2));
+
 	system("pause");
 	return 0;
 }
@@ -74,13 +82,14 @@ vector <double> solveWithOpponent(double l, double r, double y0, double y1, cons
 	y.push_back(y0);
 	y.push_back(y1);
 
-	double k11 = h*f1(y);
-	double k12 = h*f2(y);
-
-	vector <double> tmp;
-	tmp.push_back(y[0]);
-	tmp.push_back(y[1]);
 	for (int i = 0; i < n; ++i){
+		double k11 = h*f1(y);
+		double k12 = h*f2(y);
+
+		vector <double> tmp;
+		tmp.push_back(y[0]);
+		tmp.push_back(y[1]);
+
 		tmp[0] = y[0] + .5 * k11;
 		tmp[1] = y[1] + .5 * k12;
 
@@ -98,8 +107,7 @@ vector <double> solveWithOpponent(double l, double r, double y0, double y1, cons
 	}
 	return y;
 }
-
-vector <double> getSolutionRunge(const double l, const double r, double y0, double y1, const int n){
+vector <double> getSolutionRungeBase(const double l, const double r, double y0, double y1, const int n){
 	const double eps = 10e-9;
 	double err1, err2;
 	int i = 1;
@@ -112,11 +120,33 @@ vector <double> getSolutionRunge(const double l, const double r, double y0, doub
 		steps *= 2.;
 		copy(v1, v2);
 		copy(v2, solve(l, r, y0, y1, steps));
-		cout << i << endl;
-		print(v2);
+		//cout << i << endl;
+		//print(v2);
+		err1 = (v2[0] - v1[0]) / 3.;
+		err2 = (v2[1] - v1[1]) / 3.;
+		//cout << err1 << "  " << err2 << endl << endl;
+		++i;
+	} while (fabs(err1) > eps || fabs(err2) > eps);
+	return v2;
+}
+vector <double> getSolutionRungeOpponent(const double l, const double r, double y0, double y1, const int n){
+	const double eps = 10e-9;
+	double err1, err2;
+	int i = 1;
+	int steps = n;
+	vector <double> v1, v2;
+	v1.resize(2);
+	v2.resize(2);
+	copy(v2, solveWithOpponent(l, r, y0, y1, steps));
+	do{
+		steps *= 2.;
+		copy(v1, v2);
+		copy(v2, solveWithOpponent(l, r, y0, y1, steps));
+		//cout << i << endl;
+		//print(v2);
 		err1 = (v2[0] - v1[0])/3.;
 		err2 = (v2[1] - v1[1])/3.;
-		cout << err1 << "  " << err2 << endl<<endl;
+		//cout << err1 << "  " << err2 << endl<<endl;
 		++i;
 	} while (fabs(err1) > eps || fabs(err2) > eps);
 	return v2;
@@ -124,6 +154,8 @@ vector <double> getSolutionRunge(const double l, const double r, double y0, doub
 /*
 vector <double> getSolutionAutoStep(const double l, const double r, const double y0, const double y1 ){
 	const double eps = 10e-5;
+	int i = 0;
+
 	vector <double> y;
 	y.push_back(y0);
 	y.push_back(y1);
@@ -134,7 +166,16 @@ vector <double> getSolutionAutoStep(const double l, const double r, const double
 	else
 		delta = pow(1 / r, 3) + pow(sqrt(pow(f1(y), 2) + pow(f2(y), 2)), 3);
 	double h = pow(eps / delta,1./3.);
+	double xj = l;
+	int steps = (int)((r - l) / h) + 1;
+	vector <double> y1, y2, yj;
+	yj.push_back(y0);
+	yj.push_back(y1);
 
+	while (xj < r){
+		++i;
+
+	}
 }
 */
 
